@@ -1,0 +1,74 @@
+import React, { useState } from "react";
+export function Add(numbers) {
+  if (numbers === "") return 0;
+
+  let delimiters = [",", "\n"]; 
+  let input = numbers;
+  if (numbers.startsWith("//")) {
+    const parts = numbers.split("\n");
+    if (parts.length < 2) {
+      throw new Error("Invalid input format");
+    }
+    const delimiterPart = parts[0].slice(2);
+    const delimiterMatches = delimiterPart.match(/\[(.*?)\]/g);
+    if (delimiterMatches) {
+      delimiters = delimiterMatches.map((d) => d.slice(1, -1));
+    } else {
+      delimiters = [delimiterPart];
+    }
+  }
+  console.log("Delimiters:", delimiters);
+  console.log("Processed Input:", input);
+  const escapedDelimiters = delimiters
+    .map((d) => d.replace(/[-[\]/{}()*+?.\\^$|]/g, "\\$&"))
+    .join("");
+  const delimiterRegex = new RegExp(`[${escapedDelimiters}]`, "g");
+
+  const nums = input
+    .replace(delimiterRegex, ",")
+    .split(/[\n,]+/)
+    .map((num) => {
+      if (num === "") return NaN;
+      return Number(num);
+    });
+
+  const negatives = nums.filter((num) => num < 0);
+  if (negatives.length > 0) {
+    throw new Error(`negatives not allowed: ${negatives.join(", ")}`);
+  }
+  return nums
+    .filter((num) => !isNaN(num) && num <= 1000)
+    .reduce((sum, num) => sum + num, 0);
+}
+
+function StringCalculator() {
+  const [input, setInput] = useState("");
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+
+  const handleChange = (e) => {
+    setInput(e.target.value);
+  };
+
+  const handleCalculate = () => {
+    try {
+      const sum = Add(input);
+      setResult(sum);
+      setError(null);
+    } catch (e) {
+      setError(e.message);
+      setResult(null);
+    }
+  };
+
+  return (
+    <div>
+      <input type="text" value={input} onChange={handleChange} />
+      <button onClick={handleCalculate}>Calculate</button>
+      {result !== null && <div>Sum: {result}</div>}
+      {error && <div style={{ color: "red" }}>{error}</div>}
+    </div>
+  );
+}
+
+export default StringCalculator;
